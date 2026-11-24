@@ -11,9 +11,8 @@ Build a production-minded, end-to-end **ELT data pipeline** for e-commerce order
 ### Completed
 - [x] **Milestone 0 — Project Setup:** Repository structure, virtual environment, `.gitignore`, `.env.example`, and `requirements.txt`.
 - [x] **Milestone 1 — Extract (Raw Layer):** Built `src/pipelines/extract_orders.py` to pull order/cart data from a REST API into Hive-partitioned JSONL files (`dt=YYYY-MM-DD`) with strict date validation, request timeouts, and fail-fast HTTP error handling.
-
+- [x]  **Milestone 2 — Validate (Data Quality Gate):** Build `src/pipelines/validate_orders.py` to enforce the raw data contract (non-empty files, valid JSON, required fields, unique IDs, numeric range checks) and output a structured `validation_report.json`.
 ### Next Steps
-- [ ] **Milestone 2 — Validate (Data Quality Gate):** Build `src/pipelines/validate_orders.py` to enforce the raw data contract (non-empty files, valid JSON, required fields, unique IDs, numeric range checks) and output a structured `validation_report.json`.
 - [ ] **Milestone 3 — Load Raw (ELT):** Load validated raw JSONL partitions into a local **DuckDB** warehouse.
 - [ ] **Milestone 4 — Transform (Incremental SQL):** Implement watermark-based incremental loading, `ROW_NUMBER()` deduplication, nested product flattening, and partition-safe daily summary tables.
 - [ ] **Milestone 5 — Productionize & Test:** Add structured logging, retry logic, unit tests with `pytest`, and document engineering trade-offs.
@@ -93,6 +92,38 @@ python src/pipelines/extract_orders.py --run-date 2026-11-12
 `data/raw/orders/dt=2026-11-12/orders.jsonl` (one JSON object per line).
 
 ---
+
+## Validation Output Examples
+
+**Passed (`validation_report.json`):**
+```json
+{
+  "run_date": "2026-11-22",
+  "input_path": "data/raw/orders/dt=2026-11-22/orders.jsonl",
+  "total_rows": 50,
+  "error_count": 0,
+  "status": "PASSED",
+  "errors": []
+}
+```
+
+**Failed (Sabotage Test — 5 Contract Violations Caught):**
+```json
+{
+  "run_date": "2026-11-22",
+  "input_path": "data/raw/orders/dt=2026-11-22/orders.jsonl",
+  "total_rows": 50,
+  "error_count": 5,
+  "status": "FAILED",
+  "errors": [
+    "Line 1: missing or null field 'id'",
+    "Line 2: invalid total -139.93",
+    "Line 3: products must be a non-empty list",
+    "Line 5: duplicate id 4",
+    "Line 6: Invalid JSON format"
+  ]
+}
+```
 
 ## Reliability & Engineering Decisions
 

@@ -21,7 +21,6 @@ def valid_date(value: str) -> date:
 
 parser = argparse.ArgumentParser(description="Extract orders from the source API.")
 parser.add_argument("--run-date", type=valid_date, required=True, help="date for order extraction (YYYY-MM-DD)")
-
 args = parser.parse_args()
 print(f"Extracting orders for date: {args.run_date} from API: {api_url} with timeout: {timeout}")
 
